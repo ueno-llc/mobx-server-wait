@@ -1,8 +1,8 @@
 {
   "name": "mobx-server-wait",
   "author": "UENO. <birkir@ueno.co>",
-  "version": "0.0.1",
-  "main": "dist/index.js",
+  "version": "0.0.2",
+  "main": "lib/index.js",
   "description": "Render universally with server wait mobx actions.",
   "scripts": {
     "clean": "$(npm bin)/rimraf dist lib",
@@ -16,7 +16,6 @@
     "mobx-server-wait.umd.js"
   ],
   "dependencies": {
-    "webpack": "^1.13.2"
   },
   "devDependencies": {
     "babel-cli": "^6.14.0",
@@ -28,7 +27,8 @@
     "mobx-utils": "^1.0.1",
     "react": "^15.3.1",
     "react-dom": "^15.3.1",
-    "rimraf": "^2.5.4"
+    "rimraf": "^2.5.4",
+    "webpack": "^1.13.2"
   },
   "repository": {
     "type": "git",
