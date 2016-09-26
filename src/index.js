@@ -26,7 +26,11 @@ const serverWaitProxy = ({ maxWait, retryRejected }) =>
       // Create re-usable key from classname or class displayName
       // And the corresponding action name
       const constr = target.constructor;
-      const key = `${constr.displayName || constr.name}.${name}`;
+      const keyFnArgs = stringify(args)
+        .replace(/^\[/, '(')
+        .replace(/\]$/, ')')
+        .replace(/^\(\)$/, '');
+      const key = `${constr.displayName || constr.name}.${name}${keyFnArgs}`;
 
       // Check if promises don't include current key
       if (!promises.has(key)) {
@@ -34,6 +38,7 @@ const serverWaitProxy = ({ maxWait, retryRejected }) =>
         promises.set(key, {
           promise: fromPromise(method.apply(this, args)),
           maxWait,
+          client: (typeof window !== 'undefined'),
         });
       } else if (typeof window !== 'undefined') {
         const item = promises.get(key);
