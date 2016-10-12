@@ -1,7 +1,7 @@
 {
   "name": "mobx-server-wait",
   "author": "UENO. <birkir@ueno.co>",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "main": "lib/index.js",
   "description": "Render universally with server wait mobx actions.",
   "scripts": {

@@ -5,10 +5,15 @@ import stringify from 'json-stringify-safe';
 import _once from 'lodash/once';
 import _debounce from 'lodash/debounce';
 import _isFunction from 'lodash/isFunction';
+import _isObject from 'lodash/isObject';
 import _get from 'lodash/get';
 
 // Promises container
 export const promises = map();
+
+// Check if promise
+const isPromise = promise =>
+  (_isObject(promise) || _isFunction(promise)) && _isFunction(promise.then);
 
 /**
  * ServerWait decorator function
@@ -34,9 +39,13 @@ const serverWaitProxy = ({ maxWait, retryRejected }) =>
 
       // Check if promises don't include current key
       if (!promises.has(key)) {
+
+        // Fire up the promise
+        const promise = method.apply(this, args);
+
         // Add the promise and given options to the promise map
         promises.set(key, {
-          promise: fromPromise(method.apply(this, args)),
+          promise: isPromise(promise) ? fromPromise(promise) : { state: 'rejected' },
           maxWait,
           client: (typeof window !== 'undefined'),
         });
