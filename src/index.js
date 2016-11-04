@@ -104,6 +104,7 @@ export function serverWaitRender({
   store = {},
   maxWait = 1250,
   root,
+  onError,
   render = (() => {}),
   debug = (() => {}),
   storeKey = 'serverWaitPromises',
@@ -132,8 +133,23 @@ export function serverWaitRender({
     const ms = (ns / 1000000) + (s * 1000);
     debug('rendered in %s', `${ms.toFixed(3)}ms`);
 
-    // Execute the callback render method with root and store as arguments
-    render(ReactDOMServer.renderToString(root), stringify(toJS(store)));
+    try {
+      // JSON Stringify the store
+      const jsonStore = stringify(toJS(store));
+
+      // Render given React root
+      const html = ReactDOMServer.renderToString(root);
+
+      // Execute the callback render method with root and store as arguments
+      render(html, jsonStore);
+    } catch (err) {
+      if (typeof onError === 'function') {
+        // Handle errors
+        onError(err);
+      } else {
+        console.warn('Unhandled error: ', err);
+      }
+    }
   });
 
   // 50ms should be enough computing time between mobx events.

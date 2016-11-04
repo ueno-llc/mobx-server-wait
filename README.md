@@ -50,7 +50,7 @@ import store from './store.js';
 
 
 // Assuming you've created your server with express
-app.get('*', (req, res) => {
+app.get('*', (req, res, next) => {
 
   const store = new Store();
 
@@ -73,7 +73,7 @@ app.get('*', (req, res) => {
 
   const storeKey = 'serverWaitKeyToUse';
 
-  serverWaitRender({ store, storeKey, root, render });
+  serverWaitRender({ store, storeKey, root, render, onError: next });
 });
 ```
 
@@ -99,6 +99,9 @@ app.get('*', (req, res) => {
 
   // React component as root
   root: <React.Component> || undefined,
+
+  // Handled errors
+  onError: <Function> || undefined,
 
   // The mobx root store
   store: <Object> || {},
