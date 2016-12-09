@@ -1,6 +1,8 @@
 # mobx-server-wait
 Render universally with server wait mobx actions.
 
+Think of the scenario where you want to do some work in a promise. Once the work is complete, render the webpage.
+
 
 ## Install
 
