@@ -1,7 +1,7 @@
 import { autorun, toJS, map } from 'mobx';
 import { fromPromise } from 'mobx-utils';
 import ReactDOMServer from 'react-dom/server';
-import stringifySafe from 'json-stringify-safe';
+import stringify from 'json-stringify-safe';
 import _once from 'lodash/once';
 import _debounce from 'lodash/debounce';
 import _isFunction from 'lodash/isFunction';
