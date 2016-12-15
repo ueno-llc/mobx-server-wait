@@ -1,12 +1,26 @@
 import { autorun, toJS, map } from 'mobx';
 import { fromPromise } from 'mobx-utils';
 import ReactDOMServer from 'react-dom/server';
-import stringify from 'json-stringify-safe';
+import stringifySafe from 'json-stringify-safe';
 import _once from 'lodash/once';
 import _debounce from 'lodash/debounce';
 import _isFunction from 'lodash/isFunction';
 import _isObject from 'lodash/isObject';
 import _get from 'lodash/get';
+
+const UNSAFE_CHARS_REGEXP = /[<>\/\u2028\u2029]/g;
+const ESCAPED_CHARS = {
+  '<': '\\u003C',
+  '>': '\\u003E',
+  '/': '\\u002F',
+  '\u2028': '\\u2028',
+  '\u2029': '\\u2029',
+};
+
+const xssFilter = (str) => {
+  str = str.replace(UNSAFE_CHARS_REGEXP, c => ESCAPED_CHARS[c]);
+  return str;
+};
 
 // Promises container
 export const promises = map();
@@ -135,7 +149,7 @@ export function serverWaitRender({
 
     try {
       // JSON Stringify the store
-      const jsonStore = stringify(toJS(store));
+      const jsonStore = xssFilter(stringify(toJS(store)));
 
       // Render given React root
       const html = ReactDOMServer.renderToString(root);
