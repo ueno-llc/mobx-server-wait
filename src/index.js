@@ -8,7 +8,7 @@ import _isFunction from 'lodash/isFunction';
 import _isObject from 'lodash/isObject';
 import _get from 'lodash/get';
 
-const UNSAFE_CHARS_REGEXP = /[<>\/\u2028\u2029]/g;
+const UNSAFE_CHARS_REGEXP = /[<>/\u2028\u2029]/g;
 const ESCAPED_CHARS = {
   '<': '\\u003C',
   '>': '\\u003E',
@@ -17,10 +17,18 @@ const ESCAPED_CHARS = {
   '\u2029': '\\u2029',
 };
 
-const xssFilter = (str) => {
-  str = str.replace(UNSAFE_CHARS_REGEXP, c => ESCAPED_CHARS[c]);
-  return str;
+const xssFilter = (str) => str.replace(UNSAFE_CHARS_REGEXP, c => ESCAPED_CHARS[c]);
+
+const getMethodName = (target, name, args) => {
+  const constr = target.constructor;
+  const keyFnArgs = stringify(args)
+    .replace(/^\[/, '(')
+    .replace(/]$/, ')')
+    .replace(/^\(\)$/, '');
+  return `${constr.displayName || constr.name}.${name}${keyFnArgs}`;
 };
+
+const isClient = (typeof window !== 'undefined');
 
 // Promises container
 export const promises = map();
@@ -44,40 +52,41 @@ const serverWaitProxy = ({ maxWait, retryRejected }) =>
 
       // Create re-usable key from classname or class displayName
       // And the corresponding action name
-      const constr = target.constructor;
-      const keyFnArgs = stringify(args)
-        .replace(/^\[/, '(')
-        .replace(/\]$/, ')')
-        .replace(/^\(\)$/, '');
-      const key = `${constr.displayName || constr.name}.${name}${keyFnArgs}`;
+      const key = getMethodName(target, name, args);
 
-      // Check if promises don't include current key
+      // Check if promises doesn't have current key
       if (!promises.has(key)) {
 
         // Fire up the promise
-        const promise = method.apply(this, args);
+        const action = method.apply(this, args);
+        const promise = fromPromise(isPromise(action) ? action : Promise.reject());
 
         // Add the promise and given options to the promise map
         promises.set(key, {
-          promise: isPromise(promise) ? fromPromise(promise) : { state: 'rejected' },
+          promise,
           maxWait,
-          client: (typeof window !== 'undefined'),
+          isClient,
         });
-      } else if (typeof window !== 'undefined') {
+
+        return promise;
+
+      } else if (isClient) {
         const item = promises.get(key);
-        const { state } = item.promise;
+        const { _state: state } = item.promise;
 
         // Check if server gave pending state
         // Or rejected and it's allowed to continue after rejection.
-        if (state === 'pending' || (retryRejected && state === 'rejected') || item.client) {
-          method.apply(this, args);
+        if (state === 'pending' || (retryRejected && state === 'rejected') || item.isClient) {
+          const action = method.apply(this, args);
+          const promise = fromPromise(isPromise(action) ? action : Promise.reject());
+          item.isClient = true;
+          return promise;
         }
 
-        // Now i'm client.
-        item.client = true;
+        item.isClient = true;
       }
 
-      return this;
+      return promises.get(key).promise;
     };
   };
 
