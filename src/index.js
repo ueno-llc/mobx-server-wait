@@ -37,6 +37,10 @@ export const promises = map();
 const isPromise = promise =>
   (_isObject(promise) || _isFunction(promise)) && _isFunction(promise.then);
 
+// Ensure a promise is promise
+const ensurePromise = promise =>
+  isPromise(promise) ? promise : Promise.reject(`${promise} is not a Promise`);
+
 /**
  * ServerWait decorator function
  * @param {object} Configuration
@@ -59,7 +63,7 @@ const serverWaitProxy = ({ maxWait, retryRejected }) =>
 
         // Fire up the promise
         const action = method.apply(this, args);
-        const promise = fromPromise(isPromise(action) ? action : Promise.reject());
+        const promise = fromPromise(ensurePromise(action));
 
         // Add the promise and given options to the promise map
         promises.set(key, {
@@ -72,18 +76,26 @@ const serverWaitProxy = ({ maxWait, retryRejected }) =>
 
       } else if (isClient) {
         const item = promises.get(key);
-        const { _state: state } = item.promise;
+        const { _state: state, _observable: value } = item.promise;
 
         // Check if server gave pending state
         // Or rejected and it's allowed to continue after rejection.
         if (state === 'pending' || (retryRejected && state === 'rejected') || item.isClient) {
           const action = method.apply(this, args);
-          const promise = fromPromise(isPromise(action) ? action : Promise.reject());
+          const promise = fromPromise(ensurePromise(action));
           item.isClient = true;
           return promise;
         }
 
         item.isClient = true;
+
+        // Continue from fulfilled server action
+        // We need to get the client to """NOT""" trigger `pending`.
+        return {
+          state: 'fulfilled',
+          value,
+          case: ({ fulfilled }) => _isFunction(fulfilled) && fulfilled(value),
+        };
       }
 
       return promises.get(key).promise;
