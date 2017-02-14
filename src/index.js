@@ -1,4 +1,4 @@
-import { autorun, toJS, map } from 'mobx';
+import { autorun, toJS, ObservableMap } from 'mobx';
 import { fromPromise } from 'mobx-utils';
 import ReactDOMServer from 'react-dom/server';
 import stringify from 'json-stringify-safe';
@@ -17,7 +17,7 @@ const ESCAPED_CHARS = {
   '\u2029': '\\u2029',
 };
 
-const xssFilter = (str) => str.replace(UNSAFE_CHARS_REGEXP, c => ESCAPED_CHARS[c]);
+const xssFilter = str => str.replace(UNSAFE_CHARS_REGEXP, c => ESCAPED_CHARS[c]);
 
 const getMethodName = (target, name, args) => {
   const constr = target.constructor;
@@ -31,7 +31,7 @@ const getMethodName = (target, name, args) => {
 const isClient = (typeof window !== 'undefined');
 
 // Promises container
-export const promises = map();
+export const promises = new ObservableMap();
 
 // Check if promise
 const isPromise = promise =>
